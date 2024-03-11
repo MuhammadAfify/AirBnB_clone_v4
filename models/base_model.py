@@ -27,6 +27,8 @@ class BaseModel:
     def save(self):
         """Update updated_at with the current datetime."""
         self.updated_at = datetime.utcnow()
+        models.storage.new(self)
+        models.storage.save()
     
     def to_dict(self, remove_password=True):
         """Return a dictionary representation of the BaseModel instance.
