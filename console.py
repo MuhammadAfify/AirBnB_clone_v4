@@ -4,7 +4,7 @@
 import cmd
 
 class HBNBCommand(cmd.Cmd):
-    """Defines the HolbertonBnB command interpreter.
+    """Define the AirBnB command interpreter.
     Attributes:
         prompt (str): The command prompt.
     """
@@ -19,7 +19,11 @@ class HBNBCommand(cmd.Cmd):
         "Amenity",
         "Review"
     }
-    
+
+    def emptyline(self):
+        """Do nothing upon receiving an empty line"""
+        pass
+
     def do_quit(self, arg):
         """Quit command to exit the program."""
         return True
