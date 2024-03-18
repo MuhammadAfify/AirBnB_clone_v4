@@ -1,1 +1,1 @@
-This readme for web static task
+Readme file for static web
