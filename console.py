@@ -41,15 +41,35 @@ class HBNBCommand(cmd.Cmd):
         """
         Create new instance of BaseModel and save it to the JSON file.
         """
-        commands = shlex.split(arg)
-        if len(commands) == 0:
+        try:
+            if not line:
+                raise SyntaxError()
+            my_list = line.split(" ")
+
+            kwargs = {}
+            for i in range(1, len(my_list)):
+                key, value = tuple(my_list[i].split("="))
+                if value[0] == '"':
+                    value = value.strip('"').replace("_", " ")
+                else:
+                    try:
+                        value = eval(value)
+                    except (SyntaxError, NameError):
+                        continue
+                kwargs[key] = value
+
+            if kwargs == {}:
+                obj = eval(my_list[0])()
+            else:
+                obj = eval(my_list[0])(**kwargs)
+                storage.new(obj)
+            print(obj.id)
+            obj.save()
+
+        except SyntaxError:
             print("** class name missing **")
-        elif commands[0] not in self.valid_classes:
+        except NameError:
             print("** class doesn't exist **")
-        else:
-            new_instance = eval(f"{commands[0]}()")
-            storage.save()
-            print(new_instance.id)
             
     def do_show(self, arg):
         """
