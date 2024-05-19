@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Defines file storage class"""
 
+
 import json
+
 
 class FileStorage:
     """Represent abstracted storage engine
@@ -13,6 +15,7 @@ class FileStorage:
 
     __file_path = "file.json"
     __objects = {}
+
     
     def all(self, cls=None):
         """Return dictionary of instantiated objects
@@ -30,10 +33,12 @@ class FileStorage:
                     dictionary[k] = v
             return dictionary
         return self.__objects
+
     
     def new(self, obj):
         """Set in __objects obj with key <obj_class_name>.id."""
         self.__objects["{}.{}".format(type(obj).__name__, obj.id)] = obj
+
         
     def save(self):  
         """Serialize __objects to the JSON file"""
@@ -43,6 +48,7 @@ class FileStorage:
             dictionary[key] = self.__objects[key].to_dict(remove_password=False)
         with open(self.__file_path, "w", encoding="utf-8") as f:
             json.dump(dictionary, f)
+
 
     def reload(self):
         """deserialize the JSON file __file_path to __objects"""
@@ -55,9 +61,15 @@ class FileStorage:
         except FileNotFoundError:
             pass
 
+
     def delete(self, obj=None):
         """delete obj from __objects if it’s inside"""
         if obj is not None:
             key = obj.__class__.__name__ + '.' + obj.id
             if key in self.__objects:
                 del self.__objects[key]
+
+
+    def close(self):
+	"""call reload() method for deserializing the JSON file to objects"""
+        self.reload()
