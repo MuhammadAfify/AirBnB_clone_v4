@@ -1,75 +1,109 @@
-#!/usr/bin/env python3
-"""Defines file storage class"""
+#!/usr/bin/python3
+
+
+"""Handles I/O, writing and reading, of JSON for storage of all class instances"""
 
 
 import json
+from models import base_model, amenity, city, place, review, state, user
+from datetime import datetime
+
+strptime = datetime.strptime
+to_json = base_model.BaseModel.to_json
 
 
 class FileStorage:
-    """Represent abstracted storage engine
-
-    Attributes:
-        __file_path (str): The name of the file to save
-        __objects (dict): A dictionary of instantiated objects
+    """handles long term storage of all class instances"""
+    CNC = {
+        'BaseModel': base_model.BaseModel,
+        'Amenity': amenity.Amenity,
+        'City': city.City,
+        'Place': place.Place,
+        'Review': review.Review,
+        'State': state.State,
+        'User': user.User
+    }
+    """CNC - this variable is a dictionary with:
+    keys: Class Names
+    values: Class type (used for instantiation)
     """
-
-    __file_path = "file.json"
+    __file_path = './dev/file.json'
     __objects = {}
 
-    
     def all(self, cls=None):
-        """Return dictionary of instantiated objects
+        """returns private attribute: __objects"""
+        if cls:
+            objects_dict = {}
+            for class_id, obj in FileStorage.__objects.items():
+                if type(obj).__name__ == cls:
+                    objects_dict[class_id] = obj
+            return objects_dict
+        return FileStorage.__objects
 
-        Return:
-            If a cls is specified, a dictionary of objects of that type.
-            Otherwise, the __objects dictionary.
-        """
-        if cls is not None:
-            if type(cls) == str:
-                cls = eval(cls)
-            dictionary = {}
-            for k, v in self.__objects.items():
-                if type(v) == cls:
-                    dictionary[k] = v
-            return dictionary
-        return self.__objects
-
-    
     def new(self, obj):
-        """Set in __objects obj with key <obj_class_name>.id."""
-        self.__objects["{}.{}".format(type(obj).__name__, obj.id)] = obj
+        """sets / updates in __objects the obj with key <obj class name>.id"""
+        bm_id = "{}.{}".format(type(obj).__name__, obj.id)
+        FileStorage.__objects[bm_id] = obj
 
-        
-    def save(self):  
-        """Serialize __objects to the JSON file"""
-        
-        dictionary = {}
-        for key in self.__objects:
-            dictionary[key] = self.__objects[key].to_dict(remove_password=False)
-        with open(self.__file_path, "w", encoding="utf-8") as f:
-            json.dump(dictionary, f)
-
+    def save(self):
+        """serializes __objects to the JSON file (path: __file_path)"""
+        fname = FileStorage.__file_path
+        d = {}
+        for bm_id, bm_obj in FileStorage.__objects.items():
+            d[bm_id] = bm_obj.to_json()
+        with open(fname, mode='w', encoding='utf-8') as f_io:
+            json.dump(d, f_io)
 
     def reload(self):
-        """deserialize the JSON file __file_path to __objects"""
+        """if file exists, deserializes JSON file to __objects, else nothing"""
+        fname = FileStorage.__file_path
+        FileStorage.__objects = {}
         try:
-            with open(self.__file_path, "r", encoding="utf-8") as f:
-                for o in json.load(f).values():
-                    name = o["__class__"]
-                    del o["__class__"]
-                    self.new(eval(name)(**o))
-        except FileNotFoundError:
-            pass
-
+            with open(fname, mode='r', encoding='utf-8') as f_io:
+                new_objs = json.load(f_io)
+        except:
+            return
+        for o_id, d in new_objs.items():
+            k_cls = d['__class__']
+            FileStorage.__objects[o_id] = FileStorage.CNC[k_cls](**d)
 
     def delete(self, obj=None):
-        """delete obj from __objects if it’s inside"""
-        if obj is not None:
-            key = obj.__class__.__name__ + '.' + obj.id
-            if key in self.__objects:
-                del self.__objects[key]
-
+        """ deletes obj from __objects if it's inside """
+        try:
+            del __objects[obj]
+        except:
+            return
 
     def close(self):
-	"""call reload() method for deserializing the JSON file to objects"""
+        """calls the reload() method for deserialization from JSON to objects"""
         self.reload()
+
+    def get(self, cls, id):
+        """ retrieves one object """
+        obj_dict = {}
+        obj = None
+        if cls:
+            obj_dict = FileStorage.__objects.values()
+            for item in obj_dict:
+                if item.id == id:
+                    obj = item
+            return obj
+
+    def count(self, cls=None):
+        """ counts number of objects of a class in storage """
+        if cls:
+            obj_list = []
+            obj_dict = FileStorage.__objects.values()
+            for item in obj_dict:
+                if type(item).__name__ == cls:
+                    obj_list.append(item)
+            return len(obj_list)
+        else:
+            obj_list = []
+            for class_name in self.CNC:
+                if class_name == 'BaseModel':
+                    continue
+                obj_class = FileStorage.__objects
+                for item in obj_class:
+                    obj_list.append(item)
+            return len(obj_list)
